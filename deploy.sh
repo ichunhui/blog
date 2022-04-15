@@ -28,13 +28,13 @@ cd ${ROOT_DIR}/.temp
 # if [[ ${GITHUB_TOKEN} && ${GITEE_TOKEN} ]]; then
 if [[ ${GITHUB_TOKEN} ]]; then
   msg='自动部署'
-  GITHUB_URL=https://ichunhui:${GITHUB_TOKEN}@github.com/ichunhui/blog2.git
+  GITHUB_URL=https://ichunhui:${GITHUB_TOKEN}@github.com/ichunhui/blog.git
   # GITEE_URL=https://turnon:${GITEE_TOKEN}@gitee.com/turnon/blog.git
   git config --global user.name "jimmy"
   git config --global user.email "hustzch@163.com"
 else
   msg='手动部署'
-  GITHUB_URL=https://github.com/ichunhui/blog2.git
+  GITHUB_URL=https://github.com/ichunhui/blog.git
   # GITEE_URL=git@gitee.com:turnon/blog.git
 fi
 git init

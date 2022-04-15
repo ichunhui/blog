@@ -126,6 +126,6 @@ markdown_it_plus:
 ## Docs: https://hexo.io/docs/deployment.html
 deploy:
   type: git
-  repo: git@github.com:dunwu/blog.git
+  repo: https://github.com/ichunhui/blog2.git
   branch: gh-pages
   message: Update blog.

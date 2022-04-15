@@ -19,6 +19,6 @@ script: bash ./deploy.sh
 notifications:
   email:
     recipients:
-      - forbreak@163.com
+      - hustzch@163.com
     on_success: change
     on_failure: always

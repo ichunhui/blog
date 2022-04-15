@@ -83,7 +83,7 @@ footer:
   # Beian ICP and gongan information for Chinese users. See: http://www.beian.miit.gov.cn, http://www.beian.gov.cn
   beian:
     enable: false
-    icp:
+    icp: 鄂ICP备17019300号-1
     # The digit in the num of gongan beian.
     gongan_id:
     # The full num of gongan beian.
@@ -110,8 +110,8 @@ creative_commons:
 # Schemes
 #scheme: Muse
 #scheme: Mist
-scheme: Pisces
-#scheme: Gemini
+# scheme: Pisces
+scheme: Gemini
 
 
 # ---------------------------------------------------------------
@@ -173,7 +173,7 @@ avatar:
   # If true, the avatar would be dispalyed in circle.
   rounded: true
   # If true, the avatar would be rotated with the cursor.
-  rotated: true
+  rotated: false
 
 # Posts / Categories / Tags in sidebar.
 site_state: true
@@ -183,8 +183,8 @@ site_state: true
 # Key is the link label showing to end users.
 # Value before `||` delimiter is the target permalink, value after `||` delimiter is the name of Font Awesome icon.
 social:
-  GitHub: https://github.com/dunwu || github
-  E-Mail: mailto:forbreak@163.com || envelope
+  GitHub: https://github.com/ichunhui || github
+  E-Mail: mailto:hustzch@163.com || envelope
   #Weibo: https://weibo.com/yourname || weibo
   #Google: https://plus.google.com/yourname || google
   #Twitter: https://twitter.com/yourname || twitter
@@ -301,7 +301,7 @@ related_posts:
 # Dependencies: https://github.com/hexojs/hexo-deployer-git
 post_edit:
   enable: true
-  url: https://github.com/dunwu/blog/blob/master/source/ # Link for view source
+  url: https://github.com/ichunhui/blog/blob/master/source/ # Link for view source
   #url: https://github.com/user-name/repo-name/edit/branch-name/subdirectory-name # Link for fork & edit
 
 
@@ -375,7 +375,7 @@ back2top:
   # Back to top in sidebar.
   sidebar: false
   # Scroll percent label in b2t button.
-  scrollpercent: false
+  scrollpercent: true
 
 # Reading progress bar
 reading_progress:
@@ -397,7 +397,7 @@ bookmark:
 # `Follow me on GitHub` banner in the top-right corner.
 github_banner:
   enable: true
-  permalink: https://github.com/dunwu
+  permalink: https://github.com/ichunhui
   title: Follow me on GitHub
 
 
@@ -594,7 +594,7 @@ comments:
 # Disqus
 disqus:
   enable: true
-  shortname: blog-ajay4qmfci
+  shortname: jimmyblog-2
   count: true
   lazyload: true
   #post_meta_order: 0

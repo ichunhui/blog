@@ -3,17 +3,17 @@
 ## Source: https://github.com/hexojs/hexo/
 
 # Site
-title: Dunwu
-subtitle: 大道至简，知易行难
-author: Zhang Peng
-description: "Dunwu's Blog"
+title: Jimmy's Blog
+subtitle: 靡不有初，鲜克有终.
+author: Jimmy
+description: '不忘初心，方得始终.'
 language: zh-CN
 keywords:
 timezone:
 
 # URL
 ## If your site is put in a subdirectory, set url as 'http://yoursite.com/child' and root as '/child/'
-url: https://dunwu.github.io/blog
+url: https://ichunhui.github.io/blog
 root: /blog/
 #permalink: :year/:month/:day/:title/
 permalink: :abbrlink.html
@@ -33,7 +33,7 @@ i18n_dir: :lang
 skip_render: README.md
 
 # Writing
-new_post_name: :title.md # File name of new posts
+new_post_name: :year-:month-:day-:title.md # File name of new posts
 default_layout: post
 titlecase: false # Transform title into titlecase
 external_link: true # Open external links in new tab

@@ -24,7 +24,7 @@ cd ${ROOT_DIR}/.temp
 
 # 如果是发布到自定义域名
 # echo 'www.example.com' > CNAME
-
+echo ${GITHUB_TOKEN}
 # if [[ ${GITHUB_TOKEN} && ${GITEE_TOKEN} ]]; then
 if [[ ${GITHUB_TOKEN} ]]; then
   msg='自动部署'

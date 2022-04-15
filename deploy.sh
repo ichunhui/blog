@@ -16,14 +16,15 @@ ROOT_DIR=$(
 set -e
 
 # 生成静态文件
-npm install
-npm run build
+#npm install
+#npm run build
 
 # 进入生成的文件夹
 cd ${ROOT_DIR}/.temp
 
 # 如果是发布到自定义域名
 # echo 'www.example.com' > CNAME
+echo 'hello' 
 echo ${GITHUB_TOKEN}
 # if [[ ${GITHUB_TOKEN} && ${GITEE_TOKEN} ]]; then
 if [[ ${GITHUB_TOKEN} ]]; then

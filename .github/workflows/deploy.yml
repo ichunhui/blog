@@ -34,14 +34,3 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
           GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
         run: npm install && npm run deploy
-
-      - name: 🚚 Get latest code
-        uses: actions/checkout@gh-pages
-      
-      - name: 📂 Sync files
-        uses: SamKirkland/FTP-Deploy-Action@4.3.0
-        with:
-          server: 106.55.157.238 
-          username: jimmy
-          password: ${{ secrets.ftp_password }}
-          server-dir: blog.ichunhui.top/	

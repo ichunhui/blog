@@ -23,7 +23,7 @@ npm run build
 cd ${ROOT_DIR}/.temp
 
 # 如果是发布到自定义域名
-# echo 'www.ichunhui.cn' > CNAME
+echo 'blog.ichunhui.top' > CNAME
 
 # if [[ ${GITHUB_TOKEN} && ${GITEE_TOKEN} ]]; then
 if [[ ${GITHUB_TOKEN} ]]; then

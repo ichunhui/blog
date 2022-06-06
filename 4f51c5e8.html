@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.2">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.ico">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/pace/1.0.2/themes/blue/pace-theme-minimal.min.css">
+  <script src="//cdnjs.cloudflare.com/ajax/libs/pace/1.0.2/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"ichunhui.github.io","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":true},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="HBase  简介 HBase 是建立在 HDFS 基础上的面向列的分布式数据库。  HBase 参考了谷歌的 BigTable 建模，实现的编程语言为 Java。 它是 Hadoop 项目的子项目，运行于 HDFS 文件系统之上。  HBase 适用场景：实时地随机访问超大数据集。 在 CAP 理论中，HBase 属于 CP 类型的系统。  基础 HBase 维护  原理  数据模型 HBas">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Hbase">
+<meta property="og:url" content="https://ichunhui.github.io/4f51c5e8.html">
+<meta property="og:site_name" content="Jimmy&#39;s Blog">
+<meta property="og:description" content="HBase  简介 HBase 是建立在 HDFS 基础上的面向列的分布式数据库。  HBase 参考了谷歌的 BigTable 建模，实现的编程语言为 Java。 它是 Hadoop 项目的子项目，运行于 HDFS 文件系统之上。  HBase 适用场景：实时地随机访问超大数据集。 在 CAP 理论中，HBase 属于 CP 类型的系统。  基础 HBase 维护  原理  数据模型 HBas">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/dunwu/images/dev/cs/bigdata/hbase/1551164163369.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/dunwu/images/dev/cs/bigdata/hbase/1551164224778.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/dunwu/images/dev/cs/bigdata/hbase/1551164744748.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/dunwu/images/dev/cs/bigdata/hbase/1551165887616.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/dunwu/images/dev/cs/bigdata/hbase/1551166513572.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/dunwu/images/dev/cs/bigdata/hbase/1551166602999.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/dunwu/images/dev/cs/bigdata/hbase/1551166447147.png">
+<meta property="article:published_time" content="2020-02-10T06:27:39.000Z">
+<meta property="article:modified_time" content="2022-06-06T10:42:50.063Z">
+<meta property="article:author" content="Jimmy">
+<meta property="article:tag" content="数据库">
+<meta property="article:tag" content="列式数据库">
+<meta property="article:tag" content="Hbase">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/dunwu/images/dev/cs/bigdata/hbase/1551164163369.png">
+
+<link rel="canonical" href="https://ichunhui.github.io/4f51c5e8.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Hbase | Jimmy's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="Jimmy's Blog" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Jimmy's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">靡不有初，鲜克有终.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档<span class="badge">192</span></a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签<span class="badge">114</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类<span class="badge">41</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+  <a href="https://github.com/ichunhui" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://ichunhui.github.io/4f51c5e8.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar2.gif">
+      <meta itemprop="name" content="Jimmy">
+      <meta itemprop="description" content="不忘初心，方得始终.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jimmy's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Hbase<a href="https://github.com/ichunhui/ichunhui.github.io/blob/master/source/_posts/%E6%95%B0%E6%8D%AE%E5%BA%93/06.%E5%88%97%E5%BC%8F%E6%95%B0%E6%8D%AE%E5%BA%93/01.Hbase.md" class="post-edit-link" title="编辑" rel="noopener" target="_blank"><i class="fa fa-pencil"></i></a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-02-10 14:27:39" itemprop="dateCreated datePublished" datetime="2020-02-10T14:27:39+08:00">2020-02-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-06-06 18:42:50" itemprop="dateModified" datetime="2022-06-06T18:42:50+08:00">2022-06-06</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/" itemprop="url" rel="index"><span itemprop="name">数据库</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/%E5%88%97%E5%BC%8F%E6%95%B0%E6%8D%AE%E5%BA%93/" itemprop="url" rel="index"><span itemprop="name">列式数据库</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus：</span>
+    
+    <a title="disqus" href="/4f51c5e8.html#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="4f51c5e8.html" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>1.6k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>1 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="hbase"><a class="markdownIt-Anchor" href="#hbase"></a> HBase</h1>
+<h2 id="简介"><a class="markdownIt-Anchor" href="#简介"></a> 简介</h2>
+<p>HBase 是建立在 HDFS 基础上的面向列的分布式数据库。</p>
+<ul>
+<li>HBase 参考了谷歌的 BigTable 建模，实现的编程语言为 Java。</li>
+<li>它是 Hadoop 项目的子项目，运行于 HDFS 文件系统之上。</li>
+</ul>
+<p>HBase 适用场景：实时地随机访问超大数据集。</p>
+<p>在 <a target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/CAP%E5%AE%9A%E7%90%86">CAP 理论</a>中，HBase 属于 CP 类型的系统。</p>
+<h2 id="基础"><a class="markdownIt-Anchor" href="#基础"></a> 基础</h2>
+<p><a href="HBase%E8%BF%90%E7%BB%B4.md">HBase 维护</a></p>
+<h2 id="原理"><a class="markdownIt-Anchor" href="#原理"></a> 原理</h2>
+<h3 id="数据模型"><a class="markdownIt-Anchor" href="#数据模型"></a> 数据模型</h3>
+<p>HBase 是一个面向列的数据库，在表中它由行排序。</p>
+<p>HBase 表模型结构为：</p>
+<ul>
+<li>表（table）是行的集合。</li>
+<li>行（row）是列族的集合。</li>
+<li>列族（column family）是列的集合。</li>
+<li>列（row）是键值对的集合。</li>
+</ul>
+<p><img src="https://raw.githubusercontent.com/dunwu/images/dev/cs/bigdata/hbase/1551164163369.png" alt="img" /></p>
+<p>HBase 表的单元格（cell）由行和列的坐标交叉决定，是有版本的。默认情况下，版本号是自动分配的，为 HBase 插入单元格时的时间戳。单元格的内容是未解释的字节数组。</p>
+<p>行的键也是未解释的字节数组，所以理论上，任何数据都可以通过序列化表示成字符串或二进制，从而存为 HBase 的键值。</p>
+<p><img src="https://raw.githubusercontent.com/dunwu/images/dev/cs/bigdata/hbase/1551164224778.png" alt="img" /></p>
+<h3 id="hbase-架构"><a class="markdownIt-Anchor" href="#hbase-架构"></a> HBase 架构</h3>
+<p><img src="https://raw.githubusercontent.com/dunwu/images/dev/cs/bigdata/hbase/1551164744748.png" alt="img" /></p>
+<p>和 HDFS、YARN 一样，HBase 也采用 master / slave 架构：</p>
+<ul>
+<li>HBase 有一个 master 节点。master 节点负责将区域（region）分配给 region 节点；恢复 region 节点的故障。</li>
+<li>HBase 有多个 region 节点。region 节点负责零个或多个区域（region）的管理并相应客户端的读写请求。region 节点还负责区域的划分并通知 master 节点有了新的子区域。</li>
+</ul>
+<p>HBase 依赖 ZooKeeper 来实现故障恢复。</p>
+<h4 id="regin"><a class="markdownIt-Anchor" href="#regin"></a> Regin</h4>
+<p>HBase 表按行键范围水平自动划分为区域（region）。每个区域由表中行的子集构成。每个区域由它所属的表、它所含的第一行及最后一行来表示。</p>
+<p><strong>区域只不过是表被拆分，并分布在区域服务器。</strong></p>
+<p><img src="https://raw.githubusercontent.com/dunwu/images/dev/cs/bigdata/hbase/1551165887616.png" alt="img" /></p>
+<h4 id="master-服务器"><a class="markdownIt-Anchor" href="#master-服务器"></a> Master 服务器</h4>
+<p>区域分配、DDL(create、delete)操作由 HBase master 服务器处理。</p>
+<ul>
+<li>master 服务器负责协调 region 服务器
+<ul>
+<li>协助区域启动，出现故障恢复或负载均衡情况时，重新分配 region 服务器</li>
+<li>监控集群中的所有 region 服务器</li>
+</ul>
+</li>
+<li>支持 DDL 接口（创建、删除、更新表）</li>
+</ul>
+<p><img src="https://raw.githubusercontent.com/dunwu/images/dev/cs/bigdata/hbase/1551166513572.png" alt="img" /></p>
+<h4 id="regin-服务器"><a class="markdownIt-Anchor" href="#regin-服务器"></a> Regin 服务器</h4>
+<p>区域服务器运行在 HDFS 数据节点上，具有以下组件</p>
+<ul>
+<li>
+<p><code>WAL</code> - Write Ahead Log 是 HDFS 上的文件。WAL 存储尚未持久存储到永久存储的新数据，它用于在发生故障时进行恢复。</p>
+</li>
+<li>
+<p><code>BlockCache</code> - 是读缓存。它将频繁读取的数据存储在内存中。至少最近使用的数据在完整时被逐出。</p>
+</li>
+<li>
+<p><code>MemStore</code> - 是写缓存。它存储尚未写入磁盘的新数据。在写入磁盘之前对其进行排序。每个区域每个列族有一个 MemStore。</p>
+</li>
+<li>
+<p><code>Hfiles</code> - 将行存储为磁盘上的排序键值对。</p>
+</li>
+</ul>
+<p><img src="https://raw.githubusercontent.com/dunwu/images/dev/cs/bigdata/hbase/1551166602999.png" alt="img" /></p>
+<h4 id="zookeeper"><a class="markdownIt-Anchor" href="#zookeeper"></a> ZooKeeper</h4>
+<p>HBase 使用 ZooKeeper 作为分布式协调服务来维护集群中的服务器状态。Zookeeper 维护哪些服务器是活动的和可用的，并提供服务器故障通知。集群至少应该有 3 个节点。</p>
+<p><img src="https://raw.githubusercontent.com/dunwu/images/dev/cs/bigdata/hbase/1551166447147.png" alt="img" /></p>
+<h2 id="hbase-和-rdbms"><a class="markdownIt-Anchor" href="#hbase-和-rdbms"></a> HBase 和 RDBMS</h2>
+<table>
+<thead>
+<tr>
+<th>HBase</th>
+<th>RDBMS</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>HBase 无模式，它不具有固定列模式的概念;仅定义列族。</td>
+<td>RDBMS 有它的模式，描述表的整体结构的约束。</td>
+</tr>
+<tr>
+<td>它专门创建为宽表。 HBase 是横向扩展。</td>
+<td>这些都是细而专为小表。很难形成规模。</td>
+</tr>
+<tr>
+<td>没有任何事务存在于 HBase。</td>
+<td>RDBMS 是事务性的。</td>
+</tr>
+<tr>
+<td>它反规范化的数据。</td>
+<td>它具有规范化的数据。</td>
+</tr>
+<tr>
+<td>它用于半结构以及结构化数据是非常好的。</td>
+<td>用于结构化数据非常好。</td>
+</tr>
+</tbody>
+</table>
+<h2 id="api"><a class="markdownIt-Anchor" href="#api"></a> API</h2>
+<p>Java API 归纳总结在这里：<a href="hbase-api-java.md">HBase 应用</a></p>
+<h2 id="附录"><a class="markdownIt-Anchor" href="#附录"></a> 附录</h2>
+<h3 id="命令行"><a class="markdownIt-Anchor" href="#命令行"></a> 命令行</h3>
+<p>HBase 命令行可以参考这里：<a href="HBase%E5%91%BD%E4%BB%A4.md">HBase 命令行</a></p>
+<h2 id="更多内容"><a class="markdownIt-Anchor" href="#更多内容"></a> 更多内容</h2>
+<h3 id="扩展阅读"><a class="markdownIt-Anchor" href="#扩展阅读"></a> 扩展阅读</h3>
+<ul>
+<li><a href="HBase%E5%91%BD%E4%BB%A4.md">HBase 命令</a></li>
+<li><a href="HBase%E8%BF%90%E7%BB%B4.md">HBase 运维</a></li>
+</ul>
+<h3 id="参考资料"><a class="markdownIt-Anchor" href="#参考资料"></a> 参考资料</h3>
+<h4 id="官方"><a class="markdownIt-Anchor" href="#官方"></a> 官方</h4>
+<ul>
+<li><a target="_blank" rel="noopener" href="http://hbase.apache.org/">HBase 官网</a></li>
+<li><a target="_blank" rel="noopener" href="https://hbase.apache.org/book.html">HBase 官方文档</a></li>
+<li><a target="_blank" rel="noopener" href="http://abloz.com/hbase/book.html">HBase 官方文档中文版</a></li>
+<li><a target="_blank" rel="noopener" href="https://hbase.apache.org/apidocs/index.html">HBase API</a></li>
+</ul>
+<h4 id="文章"><a class="markdownIt-Anchor" href="#文章"></a> 文章</h4>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://static.googleusercontent.com/media/research.google.com/zh-CN//archive/bigtable-osdi06.pdf">Bigtable: A Distributed Storage System for Structured Data</a></li>
+<li><a target="_blank" rel="noopener" href="https://mapr.com/blog/in-depth-look-hbase-architecture">An In-Depth Look at the HBase Architecture</a></li>
+</ul>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Jimmy
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://ichunhui.github.io/4f51c5e8.html" title="Hbase">https://ichunhui.github.io/4f51c5e8.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 数据库</a>
+              <a href="/tags/%E5%88%97%E5%BC%8F%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 列式数据库</a>
+              <a href="/tags/Hbase/" rel="tag"># Hbase</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/4b832ddf.html" rel="prev" title="Mysql 教程">
+      <i class="fa fa-chevron-left"></i> Mysql 教程
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/14d4f061.html" rel="next" title="效率提升方法论">
+      效率提升方法论 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="disqus_thread">
+      <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+    </div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#hbase"><span class="nav-text"> HBase</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AE%80%E4%BB%8B"><span class="nav-text"> 简介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9F%BA%E7%A1%80"><span class="nav-text"> 基础</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8E%9F%E7%90%86"><span class="nav-text"> 原理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E6%A8%A1%E5%9E%8B"><span class="nav-text"> 数据模型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#hbase-%E6%9E%B6%E6%9E%84"><span class="nav-text"> HBase 架构</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#regin"><span class="nav-text"> Regin</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#master-%E6%9C%8D%E5%8A%A1%E5%99%A8"><span class="nav-text"> Master 服务器</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#regin-%E6%9C%8D%E5%8A%A1%E5%99%A8"><span class="nav-text"> Regin 服务器</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#zookeeper"><span class="nav-text"> ZooKeeper</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#hbase-%E5%92%8C-rdbms"><span class="nav-text"> HBase 和 RDBMS</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#api"><span class="nav-text"> API</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%99%84%E5%BD%95"><span class="nav-text"> 附录</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%91%BD%E4%BB%A4%E8%A1%8C"><span class="nav-text"> 命令行</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9B%B4%E5%A4%9A%E5%86%85%E5%AE%B9"><span class="nav-text"> 更多内容</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%89%A9%E5%B1%95%E9%98%85%E8%AF%BB"><span class="nav-text"> 扩展阅读</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="nav-text"> 参考资料</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AE%98%E6%96%B9"><span class="nav-text"> 官方</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%96%87%E7%AB%A0"><span class="nav-text"> 文章</span></a></li></ol></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jimmy"
+      src="/images/avatar2.gif">
+  <p class="site-author-name" itemprop="name">Jimmy</p>
+  <div class="site-description" itemprop="description">不忘初心，方得始终.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">192</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">114</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/ichunhui" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;ichunhui" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hustzch@163.com" title="E-Mail → mailto:hustzch@163.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">鄂ICP备17019300号-2 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 2015 – 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-paper-plane"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jimmy</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="站点总字数">1.1m</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">16:19</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  
+  <script color='0,0,255' opacity='0.5' zIndex='-1' count='99' src="//cdn.jsdelivr.net/gh/theme-next/theme-next-canvas-nest@1/canvas-nest.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+<script src="/js/bookmark.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<script>
+  function loadCount() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://jimmyblog-2.disqus.com/count.js';
+    s.id = 'dsq-count-scr';
+    (d.head || d.body).appendChild(s);
+  }
+  // defer loading until the whole page loading is completed
+  window.addEventListener('load', loadCount, false);
+</script>
+<script>
+  var disqus_config = function() {
+    this.page.url = "https://ichunhui.github.io/4f51c5e8.html";
+    this.page.identifier = "4f51c5e8.html";
+    this.page.title = "Hbase";
+    };
+  NexT.utils.loadComments(document.querySelector('#disqus_thread'), () => {
+    if (window.DISQUS) {
+      DISQUS.reset({
+        reload: true,
+        config: disqus_config
+      });
+    } else {
+      var d = document, s = d.createElement('script');
+      s.src = 'https://jimmyblog-2.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', '' + +new Date());
+      (d.head || d.body).appendChild(s);
+    }
+  });
+</script>
+
+</body>
+</html>

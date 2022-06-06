@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.2">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.ico">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/pace/1.0.2/themes/blue/pace-theme-minimal.min.css">
+  <script src="//cdnjs.cloudflare.com/ajax/libs/pace/1.0.2/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"ichunhui.github.io","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":true},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="Mysql 事务  不是所有的 Mysql 存储引擎都实现了事务处理。支持事务的存储引擎有：InnoDB 和 NDB Cluster。不支持事务的存储引擎，代表有：MyISAM。 用户可以根据业务是否需要事务处理（事务处理可以保证数据安全，但会增加系统开销），选择合适的存储引擎。    1. 事务简介  事务简单来说：一个 Session 中所进行所有的操作，要么同时成功，要么同时失败。进一步说">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Mysql 事务">
+<meta property="og:url" content="https://ichunhui.github.io/c047f08d.html">
+<meta property="og:site_name" content="Jimmy&#39;s Blog">
+<meta property="og:description" content="Mysql 事务  不是所有的 Mysql 存储引擎都实现了事务处理。支持事务的存储引擎有：InnoDB 和 NDB Cluster。不支持事务的存储引擎，代表有：MyISAM。 用户可以根据业务是否需要事务处理（事务处理可以保证数据安全，但会增加系统开销），选择合适的存储引擎。    1. 事务简介  事务简单来说：一个 Session 中所进行所有的操作，要么同时成功，要么同时失败。进一步说">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/dunwu/images/dev/snap/20200716074533.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/dunwu/images/dev/cs/database/RDB/%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/dunwu/images/dev/cs/database/RDB/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%B9%B6%E5%8F%91%E4%B8%80%E8%87%B4%E6%80%A7-%E4%B8%A2%E5%A4%B1%E4%BF%AE%E6%94%B9.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/dunwu/images/dev/cs/database/RDB/%E6%95%B0%E6%8D%AE%E5%BA%93ACID.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/dunwu/images/dev/cs/database/RDB/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%B9%B6%E5%8F%91%E4%B8%80%E8%87%B4%E6%80%A7-%E8%84%8F%E6%95%B0%E6%8D%AE.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/dunwu/images/dev/cs/database/RDB/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%B9%B6%E5%8F%91%E4%B8%80%E8%87%B4%E6%80%A7-%E4%B8%8D%E5%8F%AF%E9%87%8D%E5%A4%8D%E8%AF%BB.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/dunwu/images/dev/cs/database/RDB/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%B9%B6%E5%8F%91%E4%B8%80%E8%87%B4%E6%80%A7-%E5%B9%BB%E8%AF%BB.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/dunwu/images/dev/snap/20200630153139.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/dunwu/images/dev/snap/20200630154606.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/dunwu/images/dev/snap/20200630154619.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/dunwu/images/dev/snap/20200630112600.png">
+<meta property="article:published_time" content="2020-06-03T11:32:09.000Z">
+<meta property="article:modified_time" content="2022-06-06T10:42:50.059Z">
+<meta property="article:author" content="Jimmy">
+<meta property="article:tag" content="数据库">
+<meta property="article:tag" content="关系型数据库">
+<meta property="article:tag" content="事务">
+<meta property="article:tag" content="Mysql">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/dunwu/images/dev/snap/20200716074533.png">
+
+<link rel="canonical" href="https://ichunhui.github.io/c047f08d.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Mysql 事务 | Jimmy's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="Jimmy's Blog" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Jimmy's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">靡不有初，鲜克有终.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档<span class="badge">192</span></a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签<span class="badge">114</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类<span class="badge">41</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+  <a href="https://github.com/ichunhui" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://ichunhui.github.io/c047f08d.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar2.gif">
+      <meta itemprop="name" content="Jimmy">
+      <meta itemprop="description" content="不忘初心，方得始终.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jimmy's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Mysql 事务<a href="https://github.com/ichunhui/ichunhui.github.io/blob/master/source/_posts/%E6%95%B0%E6%8D%AE%E5%BA%93/03.%E5%85%B3%E7%B3%BB%E5%9E%8B%E6%95%B0%E6%8D%AE%E5%BA%93/02.Mysql/03.Mysql%E4%BA%8B%E5%8A%A1.md" class="post-edit-link" title="编辑" rel="noopener" target="_blank"><i class="fa fa-pencil"></i></a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-06-03 19:32:09" itemprop="dateCreated datePublished" datetime="2020-06-03T19:32:09+08:00">2020-06-03</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-06-06 18:42:50" itemprop="dateModified" datetime="2022-06-06T18:42:50+08:00">2022-06-06</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/" itemprop="url" rel="index"><span itemprop="name">数据库</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/%E5%85%B3%E7%B3%BB%E5%9E%8B%E6%95%B0%E6%8D%AE%E5%BA%93/" itemprop="url" rel="index"><span itemprop="name">关系型数据库</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/%E5%85%B3%E7%B3%BB%E5%9E%8B%E6%95%B0%E6%8D%AE%E5%BA%93/Mysql/" itemprop="url" rel="index"><span itemprop="name">Mysql</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus：</span>
+    
+    <a title="disqus" href="/c047f08d.html#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="c047f08d.html" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>7.8k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>7 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="mysql-事务"><a class="markdownIt-Anchor" href="#mysql-事务"></a> Mysql 事务</h1>
+<blockquote>
+<p>不是所有的 Mysql 存储引擎都实现了事务处理。支持事务的存储引擎有：<code>InnoDB</code> 和 <code>NDB Cluster</code>。不支持事务的存储引擎，代表有：<code>MyISAM</code>。</p>
+<p>用户可以根据业务是否需要事务处理（事务处理可以保证数据安全，但会增加系统开销），选择合适的存储引擎。</p>
+</blockquote>
+<p><img src="https://raw.githubusercontent.com/dunwu/images/dev/snap/20200716074533.png" alt="img" /></p>
+<h2 id="1-事务简介"><a class="markdownIt-Anchor" href="#1-事务简介"></a> 1. 事务简介</h2>
+<blockquote>
+<p>事务简单来说：<strong>一个 Session 中所进行所有的操作，要么同时成功，要么同时失败</strong>。进一步说，事务指的是满足 ACID 特性的一组操作，可以通过 <code>Commit</code> 提交一个事务，也可以使用 <code>Rollback</code> 进行回滚。</p>
+</blockquote>
+<p><img src="https://raw.githubusercontent.com/dunwu/images/dev/cs/database/RDB/%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1.png" alt="img" /></p>
+<p><strong>事务就是一组原子性的 SQL 语句</strong>。具体来说，事务指的是满足 ACID 特性的一组操作。</p>
+<p><strong>事务内的 SQL 语句，要么全执行成功，要么全执行失败</strong>。</p>
+<p><strong>通过加锁的方式，可以实现不同的事务隔离机制</strong>。</p>
+<p>想象一下，如果没有事务，在并发环境下，就可能出现丢失修改的问题。</p>
+<p>T<sub>1</sub> 和 T<sub>2</sub> 两个线程都对一个数据进行修改，T<sub>1</sub> 先修改，T<sub>2</sub> 随后修改，T<sub>2</sub> 的修改覆盖了 T<sub>1</sub> 的修改。</p>
+<p><img src="https://raw.githubusercontent.com/dunwu/images/dev/cs/database/RDB/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%B9%B6%E5%8F%91%E4%B8%80%E8%87%B4%E6%80%A7-%E4%B8%A2%E5%A4%B1%E4%BF%AE%E6%94%B9.png" alt="img" /></p>
+<h2 id="2-事务用法"><a class="markdownIt-Anchor" href="#2-事务用法"></a> 2. 事务用法</h2>
+<h3 id="21-事务处理指令"><a class="markdownIt-Anchor" href="#21-事务处理指令"></a> 2.1. 事务处理指令</h3>
+<p>Mysql 中，使用 <code>START TRANSACTION</code> 语句开始一个事务；使用 <code>COMMIT</code> 语句提交所有的修改；使用 <code>ROLLBACK</code> 语句撤销所有的修改。不能回退 <code>SELECT</code> 语句，回退 <code>SELECT</code> 语句也没意义；也不能回退 <code>CREATE</code> 和 <code>DROP</code> 语句。</p>
+<ul>
+<li><code>START TRANSACTION</code> - 指令用于标记事务的起始点。</li>
+<li><code>SAVEPOINT</code> - 指令用于创建保留点。</li>
+<li><code>ROLLBACK TO</code> - 指令用于回滚到指定的保留点；如果没有设置保留点，则回退到 <code>START TRANSACTION</code> 语句处。</li>
+<li><code>COMMIT</code> - 提交事务。</li>
+</ul>
+<p>事务处理示例：</p>
+<p>（1）创建一张示例表</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="comment">-- 撤销表 user</span></span><br><span class="line"><span class="keyword">DROP</span> <span class="keyword">TABLE</span> IF <span class="keyword">EXISTS</span> <span class="keyword">user</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 创建表 user</span></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> <span class="keyword">user</span> (</span><br><span class="line">  id <span class="type">int</span>(<span class="number">10</span>) unsigned <span class="keyword">NOT</span> <span class="keyword">NULL</span> COMMENT <span class="string">&#x27;Id&#x27;</span>,</span><br><span class="line">  username <span class="type">varchar</span>(<span class="number">64</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span> <span class="keyword">DEFAULT</span> <span class="string">&#x27;default&#x27;</span> COMMENT <span class="string">&#x27;用户名&#x27;</span>,</span><br><span class="line">  password <span class="type">varchar</span>(<span class="number">64</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span> <span class="keyword">DEFAULT</span> <span class="string">&#x27;default&#x27;</span> COMMENT <span class="string">&#x27;密码&#x27;</span>,</span><br><span class="line">  email <span class="type">varchar</span>(<span class="number">64</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span> <span class="keyword">DEFAULT</span> <span class="string">&#x27;default&#x27;</span> COMMENT <span class="string">&#x27;邮箱&#x27;</span></span><br><span class="line">) COMMENT<span class="operator">=</span><span class="string">&#x27;用户表&#x27;</span>;</span><br></pre></td></tr></table></figure>
+<p>（2）执行事务操作</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="comment">-- 开始事务</span></span><br><span class="line"><span class="keyword">START</span> TRANSACTION;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 插入操作 A</span></span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> `<span class="keyword">user</span>`</span><br><span class="line"><span class="keyword">VALUES</span> (<span class="number">1</span>, <span class="string">&#x27;root1&#x27;</span>, <span class="string">&#x27;root1&#x27;</span>, <span class="string">&#x27;xxxx@163.com&#x27;</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 创建保留点 updateA</span></span><br><span class="line"><span class="keyword">SAVEPOINT</span> updateA;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 插入操作 B</span></span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> `<span class="keyword">user</span>`</span><br><span class="line"><span class="keyword">VALUES</span> (<span class="number">2</span>, <span class="string">&#x27;root2&#x27;</span>, <span class="string">&#x27;root2&#x27;</span>, <span class="string">&#x27;xxxx@163.com&#x27;</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 回滚到保留点 updateA</span></span><br><span class="line"><span class="keyword">ROLLBACK</span> <span class="keyword">TO</span> updateA;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 提交事务，只有操作 A 生效</span></span><br><span class="line"><span class="keyword">COMMIT</span>;</span><br></pre></td></tr></table></figure>
+<p>（3）执行结果</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> <span class="keyword">user</span>;</span><br></pre></td></tr></table></figure>
+<p>结果：</p>
+<figure class="highlight angelscript"><table><tr><td class="code"><pre><span class="line"><span class="number">1</span>	root1	root1	<span class="symbol">xxxx@</span><span class="number">163.</span>com</span><br></pre></td></tr></table></figure>
+<h3 id="22-autocommit"><a class="markdownIt-Anchor" href="#22-autocommit"></a> 2.2. AUTOCOMMIT</h3>
+<p><strong>MySQL 默认采用隐式提交策略（<code>autocommit</code>）</strong>。每执行一条语句就把这条语句当成一个事务然后进行提交。当出现 <code>START TRANSACTION</code> 语句时，会关闭隐式提交；当 <code>COMMIT</code> 或 <code>ROLLBACK</code> 语句执行后，事务会自动关闭，重新恢复隐式提交。</p>
+<p>通过 <code>set autocommit=0</code> 可以取消自动提交，直到 <code>set autocommit=1</code> 才会提交；<code>autocommit</code> 标记是针对每个连接而不是针对服务器的。</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="comment">-- 查看 AUTOCOMMIT</span></span><br><span class="line"><span class="keyword">SHOW</span> VARIABLES <span class="keyword">LIKE</span> <span class="string">&#x27;AUTOCOMMIT&#x27;</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 关闭 AUTOCOMMIT</span></span><br><span class="line"><span class="keyword">SET</span> autocommit <span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 开启 AUTOCOMMIT</span></span><br><span class="line"><span class="keyword">SET</span> autocommit <span class="operator">=</span> <span class="number">1</span>;</span><br></pre></td></tr></table></figure>
+<h2 id="3-acid"><a class="markdownIt-Anchor" href="#3-acid"></a> 3. ACID</h2>
+<p>ACID 是数据库事务正确执行的四个基本要素。</p>
+<ul>
+<li><strong>原子性（Atomicity）</strong>
+<ul>
+<li>事务被视为不可分割的最小单元，事务中的所有操作要么全部提交成功，要么全部失败回滚。</li>
+<li>回滚可以用日志来实现，日志记录着事务所执行的修改操作，在回滚时反向执行这些修改操作即可。</li>
+</ul>
+</li>
+<li><strong>一致性（Consistency）</strong>
+<ul>
+<li>数据库在事务执行前后都保持一致性状态。</li>
+<li>在一致性状态下，所有事务对一个数据的读取结果都是相同的。</li>
+</ul>
+</li>
+<li><strong>隔离性（Isolation）</strong>
+<ul>
+<li>一个事务所做的修改在最终提交以前，对其它事务是不可见的。</li>
+</ul>
+</li>
+<li><strong>持久性（Durability）</strong>
+<ul>
+<li>一旦事务提交，则其所做的修改将会永远保存到数据库中。即使系统发生崩溃，事务执行的结果也不能丢失。</li>
+<li>可以通过数据库备份和恢复来实现，在系统发生奔溃时，使用备份的数据库进行数据恢复。</li>
+</ul>
+</li>
+</ul>
+<p><strong>一个支持事务（Transaction）中的数据库系统，必需要具有这四种特性，否则在事务过程（Transaction processing）当中无法保证数据的正确性，交易过程极可能达不到交易。</strong></p>
+<ul>
+<li>只有满足一致性，事务的执行结果才是正确的。</li>
+<li>在无并发的情况下，事务串行执行，隔离性一定能够满足。此时只要能满足原子性，就一定能满足一致性。</li>
+<li>在并发的情况下，多个事务并行执行，事务不仅要满足原子性，还需要满足隔离性，才能满足一致性。</li>
+<li>事务满足持久化是为了能应对系统崩溃的情况。</li>
+</ul>
+<p><img src="https://raw.githubusercontent.com/dunwu/images/dev/cs/database/RDB/%E6%95%B0%E6%8D%AE%E5%BA%93ACID.png" alt="img" /></p>
+<blockquote>
+<p>MySQL 默认采用自动提交模式（<code>AUTO COMMIT</code>）。也就是说，如果不显式使用 <code>START TRANSACTION</code> 语句来开始一个事务，那么每个查询操作都会被当做一个事务并自动提交。</p>
+</blockquote>
+<h2 id="4-事务隔离级别"><a class="markdownIt-Anchor" href="#4-事务隔离级别"></a> 4. 事务隔离级别</h2>
+<h3 id="41-事务隔离简介"><a class="markdownIt-Anchor" href="#41-事务隔离简介"></a> 4.1. 事务隔离简介</h3>
+<p>在并发环境下，事务的隔离性很难保证，因此会出现很多并发一致性问题：</p>
+<ul>
+<li><strong>丢失修改</strong></li>
+<li><strong>脏读</strong></li>
+<li><strong>不可重复读</strong></li>
+<li><strong>幻读</strong></li>
+</ul>
+<p>在 SQL 标准中，定义了四种事务隔离级别（级别由低到高）：</p>
+<ul>
+<li><strong>未提交读</strong></li>
+<li><strong>提交读</strong></li>
+<li><strong>可重复读</strong></li>
+<li><strong>串行化</strong></li>
+</ul>
+<p>Mysql 中查看和设置事务隔离级别：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="comment">-- 查看事务隔离级别</span></span><br><span class="line"><span class="keyword">SHOW</span> VARIABLES <span class="keyword">LIKE</span> <span class="string">&#x27;transaction_isolation&#x27;</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 设置事务隔离级别为 READ UNCOMMITTED</span></span><br><span class="line"><span class="keyword">SET</span> SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 设置事务隔离级别为 READ COMMITTED</span></span><br><span class="line"><span class="keyword">SET</span> SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 设置事务隔离级别为 REPEATABLE READ</span></span><br><span class="line"><span class="keyword">SET</span> SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 设置事务隔离级别为 SERIALIZABLE</span></span><br><span class="line"><span class="keyword">SET</span> SESSION TRANSACTION ISOLATION LEVEL SERIALIZABLE;</span><br></pre></td></tr></table></figure>
+<h3 id="42-未提交读"><a class="markdownIt-Anchor" href="#42-未提交读"></a> 4.2. 未提交读</h3>
+<p><strong><code>未提交读（READ UNCOMMITTED）</code> 是指：事务中的修改，即使没有提交，对其它事务也是可见的</strong>。</p>
+<p>未提交读的问题：事务可以读取未提交的数据，也被称为 <strong>脏读（Dirty Read）</strong>。</p>
+<p>T<sub>1</sub> 修改一个数据，T<sub>2</sub> 随后读取这个数据。如果 T<sub>1</sub> 撤销了这次修改，那么 T<sub>2</sub> 读取的数据是脏数据。</p>
+<p><img src="https://raw.githubusercontent.com/dunwu/images/dev/cs/database/RDB/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%B9%B6%E5%8F%91%E4%B8%80%E8%87%B4%E6%80%A7-%E8%84%8F%E6%95%B0%E6%8D%AE.png" alt="img" /></p>
+<h3 id="43-提交读"><a class="markdownIt-Anchor" href="#43-提交读"></a> 4.3. 提交读</h3>
+<p><strong><code>提交读（READ COMMITTED）</code> 是指：事务提交后，其他事务才能看到它的修改</strong>。换句话说，一个事务所做的修改在提交之前对其它事务是不可见的。提交读解决了脏读的问题。</p>
+<p>提交读是大多数数据库的默认事务隔离级别。</p>
+<p>提交读有时也叫不可重复读，它的问题是：执行两次相同的查询，得到的结果可能不一致。</p>
+<p>T<sub>2</sub> 读取一个数据，T<sub>1</sub> 对该数据做了修改。如果 T<sub>2</sub> 再次读取这个数据，此时读取的结果和第一次读取的结果不同。</p>
+<p><img src="https://raw.githubusercontent.com/dunwu/images/dev/cs/database/RDB/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%B9%B6%E5%8F%91%E4%B8%80%E8%87%B4%E6%80%A7-%E4%B8%8D%E5%8F%AF%E9%87%8D%E5%A4%8D%E8%AF%BB.png" alt="img" /></p>
+<h3 id="44-可重复读"><a class="markdownIt-Anchor" href="#44-可重复读"></a> 4.4. 可重复读</h3>
+<p><strong><code>可重复读（REPEATABLE READ）</code> 是指：保证在同一个事务中多次读取同样数据的结果是一样的</strong>。可重复读解决了不可重复读问题。</p>
+<p>可重复读是 Mysql 的默认事务隔离级别。</p>
+<p>可重复读的问题：当某个事务读取某个范围内的记录时，另外一个事务又在该范围内插入了新的记录，当之前的事务又再次读取该范围的记录时，会产生 <strong>幻读（Phantom Read）</strong>。</p>
+<p>T<sub>1</sub> 读取某个范围的数据，T<sub>2</sub> 在这个范围内插入新的数据，T<sub>1</sub> 再次读取这个范围的数据，此时读取的结果和和第一次读取的结果不同。</p>
+<p><img src="https://raw.githubusercontent.com/dunwu/images/dev/cs/database/RDB/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%B9%B6%E5%8F%91%E4%B8%80%E8%87%B4%E6%80%A7-%E5%B9%BB%E8%AF%BB.png" alt="img" /></p>
+<h3 id="45-串行化"><a class="markdownIt-Anchor" href="#45-串行化"></a> 4.5. 串行化</h3>
+<p><strong><code>串行化（SERIALIXABLE）</code> 是指：强制事务串行执行</strong>。</p>
+<p>强制事务串行执行，则避免了所有的并发问题。串行化策略会在读取的每一行数据上都加锁，这可能导致大量的超时和锁竞争。这对于高并发应用基本上是不可接受的，所以一般不会采用这个级别。</p>
+<h3 id="46-隔离级别小结"><a class="markdownIt-Anchor" href="#46-隔离级别小结"></a> 4.6. 隔离级别小结</h3>
+<ul>
+<li><strong><code>未提交读（READ UNCOMMITTED）</code></strong> - 事务中的修改，即使没有提交，对其它事务也是可见的。</li>
+<li><strong><code>提交读（READ COMMITTED）</code></strong> - 一个事务只能读取已经提交的事务所做的修改。换句话说，一个事务所做的修改在提交之前对其它事务是不可见的。</li>
+<li><strong><code>重复读（REPEATABLE READ）</code></strong> - 保证在同一个事务中多次读取同样数据的结果是一样的。</li>
+<li><strong><code>串行化（SERIALIXABLE）</code></strong> - 强制事务串行执行。</li>
+</ul>
+<p>数据库隔离级别解决的问题：</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">隔离级别</th>
+<th style="text-align:center">丢失修改</th>
+<th style="text-align:center">脏读</th>
+<th style="text-align:center">不可重复读</th>
+<th style="text-align:center">幻读</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">未提交读</td>
+<td style="text-align:center">✔️</td>
+<td style="text-align:center">❌</td>
+<td style="text-align:center">❌</td>
+<td style="text-align:center">❌</td>
+</tr>
+<tr>
+<td style="text-align:center">提交读</td>
+<td style="text-align:center">✔️</td>
+<td style="text-align:center">✔️</td>
+<td style="text-align:center">❌</td>
+<td style="text-align:center">❌</td>
+</tr>
+<tr>
+<td style="text-align:center">可重复读</td>
+<td style="text-align:center">✔️</td>
+<td style="text-align:center">✔️</td>
+<td style="text-align:center">✔️</td>
+<td style="text-align:center">❌</td>
+</tr>
+<tr>
+<td style="text-align:center">可串行化</td>
+<td style="text-align:center">✔️</td>
+<td style="text-align:center">✔️</td>
+<td style="text-align:center">✔️</td>
+<td style="text-align:center">✔️</td>
+</tr>
+</tbody>
+</table>
+<h2 id="5-死锁"><a class="markdownIt-Anchor" href="#5-死锁"></a> 5. 死锁</h2>
+<p><strong>死锁是指两个或多个事务竞争同一资源，并请求锁定对方占用的资源，从而导致恶性循环的现象</strong>。</p>
+<p>产生死锁的场景：</p>
+<ul>
+<li>
+<p>当多个事务试图以不同的顺序锁定资源时，就可能会产生死锁。</p>
+</li>
+<li>
+<p>多个事务同时锁定同一个资源时，也会产生死锁。</p>
+</li>
+</ul>
+<h3 id="51-死锁的原因"><a class="markdownIt-Anchor" href="#51-死锁的原因"></a> 5.1. 死锁的原因</h3>
+<p>行锁的具体实现算法有三种：record lock、gap lock 以及 next-key lock。record lock 是专门对索引项加锁；gap lock 是对索引项之间的间隙加锁；next-key lock 则是前面两种的组合，对索引项以其之间的间隙加锁。</p>
+<p>只在可重复读或以上隔离级别下的特定操作才会取得 gap lock 或 next-key lock，在 Select、Update 和 Delete 时，除了基于唯一索引的查询之外，其它索引查询时都会获取 gap lock 或 next-key lock，即锁住其扫描的范围。主键索引也属于唯一索引，所以主键索引是不会使用 gap lock 或 next-key lock。</p>
+<p>在 MySQL 中，gap lock 默认是开启的，即 innodb_locks_unsafe_for_binlog 参数值是 disable 的，且 MySQL 中默认的是 RR 事务隔离级别。</p>
+<p>当我们执行以下查询 SQL 时，由于 order_no 列为非唯一索引，此时又是 RR 事务隔离级别，所以 SELECT 的加锁类型为 gap lock，这里的 gap 范围是 (4,+∞）。</p>
+<blockquote>
+<p>SELECT id FROM <code>demo</code>.<code>order_record</code> where <code>order_no</code> = 4 for update;</p>
+</blockquote>
+<p>执行查询 SQL 语句获取的 gap lock 并不会导致阻塞，而当我们执行以下插入 SQL 时，会在插入间隙上再次获取插入意向锁。插入意向锁其实也是一种 gap 锁，它与 gap lock 是冲突的，所以当其它事务持有该间隙的 gap lock 时，需要等待其它事务释放 gap lock 之后，才能获取到插入意向锁。</p>
+<p>以上事务 A 和事务 B 都持有间隙 (4,+∞）的 gap 锁，而接下来的插入操作为了获取到插入意向锁，都在等待对方事务的 gap 锁释放，于是就造成了循环等待，导致死锁。</p>
+<blockquote>
+<p>INSERT INTO <code>demo</code>.<code>order_record</code>(<code>order_no</code>, <code>status</code>, <code>create_date</code>) VALUES (5, 1, ‘2019-07-13 10:57:03’);</p>
+</blockquote>
+<p><img src="https://raw.githubusercontent.com/dunwu/images/dev/snap/20200630153139.png" alt="img" /></p>
+<p><strong>另一个死锁场景</strong></p>
+<p>InnoDB 存储引擎的主键索引为聚簇索引，其它索引为辅助索引。如果使用辅助索引来更新数据库，就需要使用聚簇索引来更新数据库字段。如果两个更新事务使用了不同的辅助索引，或一个使用了辅助索引，一个使用了聚簇索引，就都有可能导致锁资源的循环等待。由于本身两个事务是互斥，也就构成了以上死锁的四个必要条件了。</p>
+<p><img src="https://raw.githubusercontent.com/dunwu/images/dev/snap/20200630154606.png" alt="img" /></p>
+<p>出现死锁的步骤：</p>
+<p><img src="https://raw.githubusercontent.com/dunwu/images/dev/snap/20200630154619.png" alt="img" /></p>
+<p>综上可知，在更新操作时，我们应该尽量使用主键来更新表字段，这样可以有效避免一些不必要的死锁发生。</p>
+<h3 id="52-避免死锁"><a class="markdownIt-Anchor" href="#52-避免死锁"></a> 5.2. 避免死锁</h3>
+<p>预防死锁的注意事项：</p>
+<ul>
+<li>在编程中尽量按照固定的顺序来处理数据库记录，假设有两个更新操作，分别更新两条相同的记录，但更新顺序不一样，有可能导致死锁；</li>
+<li>在允许幻读和不可重复读的情况下，尽量使用 RC 事务隔离级别，可以避免 gap lock 导致的死锁问题；</li>
+<li>更新表时，<strong>尽量使用主键更新</strong>；</li>
+<li>避免长事务，<strong>尽量将长事务拆解</strong>，可以降低与其它事务发生冲突的概率；</li>
+<li><strong>设置合理的锁等待超时参数</strong>，我们可以通过 <code>innodb_lock_wait_timeout</code> 设置合理的等待超时阈值，特别是在一些高并发的业务中，我们可以尽量将该值设置得小一些，避免大量事务等待，占用系统资源，造成严重的性能开销。</li>
+</ul>
+<p>另外，我们还可以将 order_no 列设置为唯一索引列。虽然不能防止幻读，但我们可以利用它的唯一性来保证订单记录不重复创建，这种方式唯一的缺点就是当遇到重复创建订单时会抛出异常。</p>
+<p>我们还可以使用其它的方式来代替数据库实现幂等性校验。例如，使用 Redis 以及 ZooKeeper 来实现，运行效率比数据库更佳。</p>
+<h3 id="53-解决死锁"><a class="markdownIt-Anchor" href="#53-解决死锁"></a> 5.3. 解决死锁</h3>
+<p>当出现死锁以后，有两种策略：</p>
+<ul>
+<li>一种策略是，直接进入等待，直到超时。这个超时时间可以通过参数 <code>innodb_lock_wait_timeout</code> 来设置。</li>
+<li>另一种策略是，发起死锁检测，发现死锁后，主动回滚死锁链条中的某一个事务，让其他事务得以继续执行。将参数 <code>innodb_deadlock_detect</code> 设置为 on，表示开启这个逻辑。</li>
+</ul>
+<p>在 InnoDB 中，innodb_lock_wait_timeout 的默认值是 50s，意味着如果采用第一个策略，当出现死锁以后，第一个被锁住的线程要过 50s 才会超时退出，然后其他线程才有可能继续执行。对于在线服务来说，这个等待时间往往是无法接受的。</p>
+<p>但是，我们又不可能直接把这个时间设置成一个很小的值，比如 1s。这样当出现死锁的时候，确实很快就可以解开，但如果不是死锁，而是简单的锁等待呢？所以，超时时间设置太短的话，会出现很多误伤。</p>
+<p>所以，正常情况下我们还是要采用第二种策略，即：主动死锁检测，而且 <code>innodb_deadlock_detect</code> 的默认值本身就是 on。为了解决死锁问题，不同数据库实现了各自的死锁检测和超时机制。InnoDB 的处理策略是：<strong>将持有最少行级排它锁的事务进行回滚</strong>。</p>
+<p>主动死锁检测在发生死锁的时候，是能够快速发现并进行处理的，但是它也是有额外负担的。你可以想象一下这个过程：每当一个事务被锁的时候，就要看看它所依赖的线程有没有被别人锁住，如此循环，最后判断是否出现了循环等待，也就是死锁。</p>
+<h2 id="6-分布式事务"><a class="markdownIt-Anchor" href="#6-分布式事务"></a> 6. 分布式事务</h2>
+<p>在单一数据节点中，事务仅限于对单一数据库资源的访问控制，称之为 <strong>本地事务</strong>。几乎所有的成熟的关系型数据库都提供了对本地事务的原生支持。</p>
+<p><strong>分布式事务指的是事务操作跨越多个节点，并且要求满足事务的 ACID 特性。</strong></p>
+<p>分布式事务的常见方案如下：</p>
+<ul>
+<li><strong>两阶段提交（2PC）</strong> - 将事务的提交过程分为两个阶段来进行处理：准备阶段和提交阶段。参与者将操作成败通知协调者，再由协调者根据所有参与者的反馈情报决定各参与者是否要提交操作还是中止操作。</li>
+<li><strong>三阶段提交（3PC）</strong> - 与二阶段提交不同的是，引入超时机制。同时在协调者和参与者中都引入超时机制。将二阶段的准备阶段拆分为 2 个阶段，插入了一个 preCommit 阶段，使得原先在二阶段提交中，参与者在准备之后，由于协调者发生崩溃或错误，而导致参与者处于无法知晓是否提交或者中止的“不确定状态”所产生的可能相当长的延时的问题得以解决。</li>
+<li><strong>补偿事务（TCC）</strong>
+<ul>
+<li><strong>Try</strong> - 操作作为一阶段，负责资源的检查和预留。</li>
+<li><strong>Confirm</strong> - 操作作为二阶段提交操作，执行真正的业务。</li>
+<li><strong>Cancel</strong> - 是预留资源的取消。</li>
+</ul>
+</li>
+<li><strong>本地消息表</strong> - 在事务主动发起方额外新建事务消息表，事务发起方处理业务和记录事务消息在本地事务中完成，轮询事务消息表的数据发送事务消息，事务被动方基于消息中间件消费事务消息表中的事务。</li>
+<li><strong>MQ 事务</strong> - 基于 MQ 的分布式事务方案其实是对本地消息表的封装。</li>
+<li><strong>SAGA</strong> - Saga 事务核心思想是将长事务拆分为多个本地短事务，由 Saga 事务协调器协调，如果正常结束那就正常完成，如果某个步骤失败，则根据相反顺序一次调用补偿操作。</li>
+</ul>
+<p>分布式事务方案分析：</p>
+<ul>
+<li>2PC/3PC 依赖于数据库，能够很好的提供强一致性和强事务性，但相对来说延迟比较高，比较适合传统的单体应用，在同一个方法中存在跨库操作的情况，不适合高并发和高性能要求的场景。</li>
+<li>TCC 适用于执行时间确定且较短，实时性要求高，对数据一致性要求高，比如互联网金融企业最核心的三个服务：交易、支付、账务。</li>
+<li>本地消息表/MQ 事务 都适用于事务中参与方支持操作幂等，对一致性要求不高，业务上能容忍数据不一致到一个人工检查周期，事务涉及的参与方、参与环节较少，业务上有对账/校验系统兜底。</li>
+<li>Saga 事务 由于 Saga 事务不能保证隔离性，需要在业务层控制并发，适合于业务场景事务并发操作同一资源较少的情况。 Saga 相比缺少预提交动作，导致补偿动作的实现比较麻烦，例如业务是发送短信，补偿动作则得再发送一次短信说明撤销，用户体验比较差。Saga 事务较适用于补偿动作容易处理的场景。</li>
+</ul>
+<blockquote>
+<p>分布式事务详细说明、分析请参考：<a target="_blank" rel="noopener" href="https://github.com/dunwu/blog/blob/master/source/_posts/theory/distributed-transaction.md">分布式事务基本原理</a></p>
+</blockquote>
+<h2 id="7-事务最佳实践"><a class="markdownIt-Anchor" href="#7-事务最佳实践"></a> 7. 事务最佳实践</h2>
+<p>高并发场景下的事务到底该如何调优？</p>
+<h3 id="71-尽量使用低级别事务隔离"><a class="markdownIt-Anchor" href="#71-尽量使用低级别事务隔离"></a> 7.1. 尽量使用低级别事务隔离</h3>
+<p>结合业务场景，尽量使用低级别事务隔离</p>
+<h3 id="72-避免行锁升级表锁"><a class="markdownIt-Anchor" href="#72-避免行锁升级表锁"></a> 7.2. 避免行锁升级表锁</h3>
+<p>在 InnoDB 中，行锁是通过索引实现的，如果不通过索引条件检索数据，行锁将会升级到表锁。我们知道，表锁是会严重影响到整张表的操作性能的，所以应该尽力避免。</p>
+<h3 id="73-缩小事务范围"><a class="markdownIt-Anchor" href="#73-缩小事务范围"></a> 7.3. 缩小事务范围</h3>
+<p>有时候，数据库并发访问量太大，会出现以下异常：</p>
+<figure class="highlight angelscript"><table><tr><td class="code"><pre><span class="line">MySQLQueryInterruptedException: Query execution was <span class="built_in">int</span>errupted</span><br></pre></td></tr></table></figure>
+<p>高并发时对一条记录进行更新的情况下，由于更新记录所在的事务还可能存在其他操作，导致一个事务比较长，当有大量请求进入时，就可能导致一些请求同时进入到事务中。</p>
+<p>又因为锁的竞争是不公平的，当多个事务同时对一条记录进行更新时，极端情况下，一个更新操作进去排队系统后，可能会一直拿不到锁，最后因超时被系统打断踢出。</p>
+<p><img src="https://raw.githubusercontent.com/dunwu/images/dev/snap/20200630112600.png" alt="img" /></p>
+<p>如上图中的操作，虽然都是在一个事务中，但锁的申请在不同时间，只有当其他操作都执行完，才会释放所有锁。因为扣除库存是更新操作，属于行锁，这将会影响到其他操作该数据的事务，所以我们应该尽量避免长时间地持有该锁，尽快释放该锁。又因为先新建订单和先扣除库存都不会影响业务，所以我们可以将扣除库存操作放到最后，也就是使用执行顺序 1，以此尽量减小锁的持有时间。</p>
+<p><strong>在 InnoDB 事务中，行锁是在需要的时候才加上的，但并不是不需要了就立刻释放，而是要等到事务结束时才释放。这个就是两阶段锁协议。</strong></p>
+<p>知道了这个设定，对我们使用事务有什么帮助呢？那就是，如果你的事务中需要锁多个行，要把最可能造成锁冲突、最可能影响并发度的锁尽量往后放。</p>
+<h2 id="8-参考资料"><a class="markdownIt-Anchor" href="#8-参考资料"></a> 8. 参考资料</h2>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://book.douban.com/subject/23008813/">《高性能 MySQL》</a></li>
+<li><a target="_blank" rel="noopener" href="https://time.geekbang.org/column/intro/100028001">《Java 性能调优实战》</a></li>
+<li><a target="_blank" rel="noopener" href="https://shardingsphere.apache.org/document/current/cn/features/transaction/">ShardingSphere 分布式事务</a></li>
+</ul>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Jimmy
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://ichunhui.github.io/c047f08d.html" title="Mysql 事务">https://ichunhui.github.io/c047f08d.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 数据库</a>
+              <a href="/tags/%E5%85%B3%E7%B3%BB%E5%9E%8B%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 关系型数据库</a>
+              <a href="/tags/%E4%BA%8B%E5%8A%A1/" rel="tag"># 事务</a>
+              <a href="/tags/Mysql/" rel="tag"># Mysql</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/79fffa13.html" rel="prev" title="Mysql 配置">
+      <i class="fa fa-chevron-left"></i> Mysql 配置
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/f030e214.html" rel="next" title="Mysql 性能优化">
+      Mysql 性能优化 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="disqus_thread">
+      <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+    </div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#mysql-%E4%BA%8B%E5%8A%A1"><span class="nav-text"> Mysql 事务</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E4%BA%8B%E5%8A%A1%E7%AE%80%E4%BB%8B"><span class="nav-text"> 1. 事务简介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E4%BA%8B%E5%8A%A1%E7%94%A8%E6%B3%95"><span class="nav-text"> 2. 事务用法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#21-%E4%BA%8B%E5%8A%A1%E5%A4%84%E7%90%86%E6%8C%87%E4%BB%A4"><span class="nav-text"> 2.1. 事务处理指令</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#22-autocommit"><span class="nav-text"> 2.2. AUTOCOMMIT</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-acid"><span class="nav-text"> 3. ACID</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB"><span class="nav-text"> 4. 事务隔离级别</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#41-%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%AE%80%E4%BB%8B"><span class="nav-text"> 4.1. 事务隔离简介</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#42-%E6%9C%AA%E6%8F%90%E4%BA%A4%E8%AF%BB"><span class="nav-text"> 4.2. 未提交读</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#43-%E6%8F%90%E4%BA%A4%E8%AF%BB"><span class="nav-text"> 4.3. 提交读</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#44-%E5%8F%AF%E9%87%8D%E5%A4%8D%E8%AF%BB"><span class="nav-text"> 4.4. 可重复读</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#45-%E4%B8%B2%E8%A1%8C%E5%8C%96"><span class="nav-text"> 4.5. 串行化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#46-%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB%E5%B0%8F%E7%BB%93"><span class="nav-text"> 4.6. 隔离级别小结</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E6%AD%BB%E9%94%81"><span class="nav-text"> 5. 死锁</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#51-%E6%AD%BB%E9%94%81%E7%9A%84%E5%8E%9F%E5%9B%A0"><span class="nav-text"> 5.1. 死锁的原因</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#52-%E9%81%BF%E5%85%8D%E6%AD%BB%E9%94%81"><span class="nav-text"> 5.2. 避免死锁</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#53-%E8%A7%A3%E5%86%B3%E6%AD%BB%E9%94%81"><span class="nav-text"> 5.3. 解决死锁</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1"><span class="nav-text"> 6. 分布式事务</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E4%BA%8B%E5%8A%A1%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5"><span class="nav-text"> 7. 事务最佳实践</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#71-%E5%B0%BD%E9%87%8F%E4%BD%BF%E7%94%A8%E4%BD%8E%E7%BA%A7%E5%88%AB%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB"><span class="nav-text"> 7.1. 尽量使用低级别事务隔离</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#72-%E9%81%BF%E5%85%8D%E8%A1%8C%E9%94%81%E5%8D%87%E7%BA%A7%E8%A1%A8%E9%94%81"><span class="nav-text"> 7.2. 避免行锁升级表锁</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#73-%E7%BC%A9%E5%B0%8F%E4%BA%8B%E5%8A%A1%E8%8C%83%E5%9B%B4"><span class="nav-text"> 7.3. 缩小事务范围</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="nav-text"> 8. 参考资料</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jimmy"
+      src="/images/avatar2.gif">
+  <p class="site-author-name" itemprop="name">Jimmy</p>
+  <div class="site-description" itemprop="description">不忘初心，方得始终.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">192</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">114</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/ichunhui" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;ichunhui" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hustzch@163.com" title="E-Mail → mailto:hustzch@163.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">鄂ICP备17019300号-2 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 2015 – 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-paper-plane"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jimmy</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="站点总字数">1.1m</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">16:19</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  
+  <script color='0,0,255' opacity='0.5' zIndex='-1' count='99' src="//cdn.jsdelivr.net/gh/theme-next/theme-next-canvas-nest@1/canvas-nest.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+<script src="/js/bookmark.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<script>
+  function loadCount() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://jimmyblog-2.disqus.com/count.js';
+    s.id = 'dsq-count-scr';
+    (d.head || d.body).appendChild(s);
+  }
+  // defer loading until the whole page loading is completed
+  window.addEventListener('load', loadCount, false);
+</script>
+<script>
+  var disqus_config = function() {
+    this.page.url = "https://ichunhui.github.io/c047f08d.html";
+    this.page.identifier = "c047f08d.html";
+    this.page.title = "Mysql 事务";
+    };
+  NexT.utils.loadComments(document.querySelector('#disqus_thread'), () => {
+    if (window.DISQUS) {
+      DISQUS.reset({
+        reload: true,
+        config: disqus_config
+      });
+    } else {
+      var d = document, s = d.createElement('script');
+      s.src = 'https://jimmyblog-2.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', '' + +new Date());
+      (d.head || d.body).appendChild(s);
+    }
+  });
+</script>
+
+</body>
+</html>

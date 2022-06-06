@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.2">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.ico">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/pace/1.0.2/themes/blue/pace-theme-minimal.min.css">
+  <script src="//cdnjs.cloudflare.com/ajax/libs/pace/1.0.2/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"ichunhui.github.io","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":true},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="网络协议之 ICMP  1. ICMP 简介 ICMP 全名为(INTERNET CONTROL MESSAGE PROTOCOL)网络控制消息协议。 ICMP 的协议号为1。 ICMP 报文就像是 IP 报文的小弟，总顶着 IP 报文的名头出来混。因为 ICMP 报文是在 IP 报文内部的，如图：   2. ICMP 类型 ICMP 报文主要有两大功能：查询报文和差错报文。  3. 目的不可达">
+<meta property="og:type" content="article">
+<meta property="og:title" content="网络协议之 ICMP">
+<meta property="og:url" content="https://ichunhui.github.io/c97315f4.html">
+<meta property="og:site_name" content="Jimmy&#39;s Blog">
+<meta property="og:description" content="网络协议之 ICMP  1. ICMP 简介 ICMP 全名为(INTERNET CONTROL MESSAGE PROTOCOL)网络控制消息协议。 ICMP 的协议号为1。 ICMP 报文就像是 IP 报文的小弟，总顶着 IP 报文的名头出来混。因为 ICMP 报文是在 IP 报文内部的，如图：   2. ICMP 类型 ICMP 报文主要有两大功能：查询报文和差错报文。  3. 目的不可达">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://images2015.cnblogs.com/blog/318837/201606/318837-20160617091834260-1410966672.png">
+<meta property="og:image" content="https://images2015.cnblogs.com/blog/318837/201606/318837-20160617091835838-1982473379.png">
+<meta property="article:published_time" content="2014-07-02T12:54:00.000Z">
+<meta property="article:modified_time" content="2022-06-06T10:42:50.071Z">
+<meta property="article:author" content="Jimmy">
+<meta property="article:tag" content="网络">
+<meta property="article:tag" content="网络协议">
+<meta property="article:tag" content="ICMP">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://images2015.cnblogs.com/blog/318837/201606/318837-20160617091834260-1410966672.png">
+
+<link rel="canonical" href="https://ichunhui.github.io/c97315f4.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>网络协议之 ICMP | Jimmy's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="Jimmy's Blog" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Jimmy's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">靡不有初，鲜克有终.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档<span class="badge">192</span></a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签<span class="badge">114</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类<span class="badge">41</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+  <a href="https://github.com/ichunhui" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://ichunhui.github.io/c97315f4.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar2.gif">
+      <meta itemprop="name" content="Jimmy">
+      <meta itemprop="description" content="不忘初心，方得始终.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jimmy's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          网络协议之 ICMP<a href="https://github.com/ichunhui/ichunhui.github.io/blob/master/source/_posts/%E7%BD%91%E7%BB%9C/02.%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE/05.ICMP.md" class="post-edit-link" title="编辑" rel="noopener" target="_blank"><i class="fa fa-pencil"></i></a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2014-07-02 20:54:00" itemprop="dateCreated datePublished" datetime="2014-07-02T20:54:00+08:00">2014-07-02</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-06-06 18:42:50" itemprop="dateModified" datetime="2022-06-06T18:42:50+08:00">2022-06-06</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%BD%91%E7%BB%9C/" itemprop="url" rel="index"><span itemprop="name">网络</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%BD%91%E7%BB%9C/%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE/" itemprop="url" rel="index"><span itemprop="name">网络协议</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus：</span>
+    
+    <a title="disqus" href="/c97315f4.html#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="c97315f4.html" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>3.4k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>3 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="网络协议之-icmp"><a class="markdownIt-Anchor" href="#网络协议之-icmp"></a> 网络协议之 ICMP</h1>
+<h2 id="1-icmp-简介"><a class="markdownIt-Anchor" href="#1-icmp-简介"></a> 1. ICMP 简介</h2>
+<p>ICMP 全名为(INTERNET CONTROL MESSAGE PROTOCOL)网络控制消息协议。</p>
+<p>ICMP 的协议号为<strong>1</strong>。</p>
+<p>ICMP 报文就像是 IP 报文的小弟，总顶着 IP 报文的名头出来混。因为 ICMP 报文是在 IP 报文内部的，如图：</p>
+<p><img src="https://images2015.cnblogs.com/blog/318837/201606/318837-20160617091834260-1410966672.png" alt="img" /></p>
+<h2 id="2-icmp-类型"><a class="markdownIt-Anchor" href="#2-icmp-类型"></a> 2. ICMP 类型</h2>
+<p>ICMP 报文主要有两大功能：查询报文和差错报文。</p>
+<h2 id="3-目的不可达destination-unreachable-message"><a class="markdownIt-Anchor" href="#3-目的不可达destination-unreachable-message"></a> 3. 目的不可达(Destination Unreachable Message)</h2>
+<p>0 1 2 3</p>
+<p>0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1</p>
+<p>±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±+</p>
+<p>| Type | Code | Checksum |</p>
+<p>±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±+</p>
+<p>| unused |</p>
+<p>±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±+</p>
+<p>| Internet Header + 64 bits of Original Data Datagram |</p>
+<p>±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±+</p>
+<p>日常生活中，邮寄包裹会经过多个传递环节，任意一环如果无法传下去，都会返回寄件人，并附上无法邮寄的原因。同理，当路由器收到一个无法传递下去的 IP 报文时，会发送 ICMP<strong>目的不可达报文</strong>（Type 为 3）给 IP 报文的源发送方。报文中的 Code 就表示发送失败的原因。</p>
+<p>Code</p>
+<p>0 = net unreachable;</p>
+<p>1 = host unreachable;</p>
+<p>2 = protocol unreachable;</p>
+<p>3 = port unreachable;</p>
+<p>4 = fragmentation needed and DF set;</p>
+<p>5 = source route failed.</p>
+<h2 id="4-超时time-exceeded-message"><a class="markdownIt-Anchor" href="#4-超时time-exceeded-message"></a> 4. 超时(Time Exceeded Message)</h2>
+<p>0 1 2 3</p>
+<p>0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1</p>
+<p>±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±+</p>
+<p>| Type | Code | Checksum |</p>
+<p>±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±+</p>
+<p>| unused |</p>
+<p>±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±+</p>
+<p>| Internet Header + 64 bits of Original Data Datagram |</p>
+<p>±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±+</p>
+<p>网络传输 IP 数据报的过程中，如果 IP 数据包的 TTL 值逐渐递减为 0 时，需要丢弃数据报。这时，路由器需要向源发送方发送 <strong>ICMP 超时报文</strong>(Type 为 11)，Code 为 0，表示传输过程中超时了。</p>
+<p>一个 IP 数据报可能会因为过大而被分片，然后在目的主机侧把所有的分片重组。如果主机迟迟没有等到所有的分片报文，就会向源发送方发送一个 ICMP 超时报文，Code 为 1，表示分片重组超时了。</p>
+<h2 id="5-参数错误报文parameter-problem-message"><a class="markdownIt-Anchor" href="#5-参数错误报文parameter-problem-message"></a> 5. 参数错误报文(Parameter Problem Message)</h2>
+<p>0 1 2 3</p>
+<p>0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1</p>
+<p>±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±+</p>
+<p>| Type | Code | Checksum |</p>
+<p>±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±+</p>
+<p>| Pointer | unused |</p>
+<p>±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±+</p>
+<p>| Internet Header + 64 bits of Original Data Datagram |</p>
+<p>±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±+</p>
+<p>当路由器或主机处理数据报时，发现因为报文头的参数错误而不得不丢弃报文时，需要向源发送方发送<strong>参数错误报文</strong>(Type 为 12)。当 Code 为 0 时，报文中的 Pointer 表示错误的字节位置。</p>
+<h2 id="6-源冷却source-quench-message"><a class="markdownIt-Anchor" href="#6-源冷却source-quench-message"></a> 6. 源冷却(Source Quench Message)</h2>
+<p>0 1 2 3</p>
+<p>0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1</p>
+<p>±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±+</p>
+<p>| Type | Code | Checksum |</p>
+<p>±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±+</p>
+<p>| unused |</p>
+<p>±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±+</p>
+<p>| Internet Header + 64 bits of Original Data Datagram |</p>
+<p>±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±+</p>
+<p>路由器在处理报文时会有一个缓存队列。如果超过最大缓存队列，将无法处理，从而丢弃报文。并向源发送方发一个 <strong>ICMP 源冷却报文</strong>(Type 为 4)，告诉对方：“嘿，我这里客满了，你迟点再来。”</p>
+<h2 id="7-重定向redirect-message"><a class="markdownIt-Anchor" href="#7-重定向redirect-message"></a> 7. 重定向(Redirect Message)</h2>
+<p>0 1 2 3</p>
+<p>0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1</p>
+<p>±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±+</p>
+<p>| Type | Code | Checksum |</p>
+<p>±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±+</p>
+<p>| Gateway Internet Address |</p>
+<p>±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±+</p>
+<p>| Internet Header + 64 bits of Original Data Datagram |</p>
+<p>±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±+</p>
+<p>想像一下，在公司中，有人来你的项目组问你某某某在哪儿。你一想，我们组没有这人啊。你肯定就会说，我们组没有这号人，你去其他组看看。当路由收到 IP 数据报，发现数据报的目的地址在路由表上没有，它就会发 <strong>ICMP 重定向报文</strong>(Type 为 5)给源发送方，提醒它想要发送的地址不在，去其他地方找找吧。</p>
+<h2 id="8-请求回显或回显应答echo-or-echo-reply-message"><a class="markdownIt-Anchor" href="#8-请求回显或回显应答echo-or-echo-reply-message"></a> 8. 请求回显或回显应答(Echo or Echo Reply Message)</h2>
+<p>0 1 2 3</p>
+<p>0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1</p>
+<p>±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±+</p>
+<p>| Type | Code | Checksum |</p>
+<p>±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±+</p>
+<p>| Identifier | Sequence Number |</p>
+<p>±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±+</p>
+<p>| Data …</p>
+<p>±±±±±</p>
+<p><strong>Type(8)<strong>是</strong>请求回显报文(Echo)</strong>；Type(0)是<strong>回显应答报文(Echo Reply)</strong>。</p>
+<p>请求回显或回显应答报文属于查询报文。Ping 就是用这种报文进行查询和回应。</p>
+<h2 id="9-时间戳或时间戳请求timestamp-or-timestamp-reply-message"><a class="markdownIt-Anchor" href="#9-时间戳或时间戳请求timestamp-or-timestamp-reply-message"></a> 9. 时间戳或时间戳请求(Timestamp or Timestamp Reply Message)</h2>
+<p>0 1 2 3</p>
+<p>0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1</p>
+<p>±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±+</p>
+<p>| Type | Code | Checksum |</p>
+<p>±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±+</p>
+<p>| Identifier | Sequence Number |</p>
+<p>±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±+</p>
+<p>| Originate Timestamp |</p>
+<p>±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±+</p>
+<p>| Receive Timestamp |</p>
+<p>±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±+</p>
+<p>| Transmit Timestamp |</p>
+<p>±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±+</p>
+<p>时间戳报文是用来记录收发以及传输时间的报文。Originate Timestamp 记录的是发送方发送报文的时刻；<strong>Receive Timestamp</strong>记录的是接收方收到报文的时刻；<strong>Transmit Timestamp</strong>表示回显这最后发送报文的时刻。</p>
+<h2 id="10-信息请求或信息响应"><a class="markdownIt-Anchor" href="#10-信息请求或信息响应"></a> 10. 信息请求或信息响应</h2>
+<p>0 1 2 3</p>
+<p>0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1</p>
+<p>±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±+</p>
+<p>| Type | Code | Checksum |</p>
+<p>±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±+</p>
+<p>| Identifier | Sequence Number |</p>
+<p>±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±+</p>
+<p>这种报文是用来找出一个主机所在的网络个数（一个主机可能会在多个网络中）。报文的 IP 消息头的目的地址会填为全 0，表示 this，源地址会填为源 IP 所在的网络 IP。</p>
+<h2 id="11-总结"><a class="markdownIt-Anchor" href="#11-总结"></a> 11. 总结</h2>
+<p><strong>图：ICMP 知识点思维导图</strong></p>
+<p><img src="https://images2015.cnblogs.com/blog/318837/201606/318837-20160617091835838-1982473379.png" alt="img" /></p>
+<h2 id="12-参考"><a class="markdownIt-Anchor" href="#12-参考"></a> 12. 参考</h2>
+<ul>
+<li><a target="_blank" rel="noopener" href="http://www.rfc-editor.org/info/rfc792">RFC792</a></li>
+</ul>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Jimmy
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://ichunhui.github.io/c97315f4.html" title="网络协议之 ICMP">https://ichunhui.github.io/c97315f4.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E7%BD%91%E7%BB%9C/" rel="tag"># 网络</a>
+              <a href="/tags/%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE/" rel="tag"># 网络协议</a>
+              <a href="/tags/ICMP/" rel="tag"># ICMP</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item"></div>
+      <div class="post-nav-item">
+    <a href="/6948162f.html" rel="next" title="设计模式之模板方法模式">
+      设计模式之模板方法模式 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="disqus_thread">
+      <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+    </div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE%E4%B9%8B-icmp"><span class="nav-text"> 网络协议之 ICMP</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-icmp-%E7%AE%80%E4%BB%8B"><span class="nav-text"> 1. ICMP 简介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-icmp-%E7%B1%BB%E5%9E%8B"><span class="nav-text"> 2. ICMP 类型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E7%9B%AE%E7%9A%84%E4%B8%8D%E5%8F%AF%E8%BE%BEdestination-unreachable-message"><span class="nav-text"> 3. 目的不可达(Destination Unreachable Message)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E8%B6%85%E6%97%B6time-exceeded-message"><span class="nav-text"> 4. 超时(Time Exceeded Message)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E5%8F%82%E6%95%B0%E9%94%99%E8%AF%AF%E6%8A%A5%E6%96%87parameter-problem-message"><span class="nav-text"> 5. 参数错误报文(Parameter Problem Message)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E6%BA%90%E5%86%B7%E5%8D%B4source-quench-message"><span class="nav-text"> 6. 源冷却(Source Quench Message)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E9%87%8D%E5%AE%9A%E5%90%91redirect-message"><span class="nav-text"> 7. 重定向(Redirect Message)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E8%AF%B7%E6%B1%82%E5%9B%9E%E6%98%BE%E6%88%96%E5%9B%9E%E6%98%BE%E5%BA%94%E7%AD%94echo-or-echo-reply-message"><span class="nav-text"> 8. 请求回显或回显应答(Echo or Echo Reply Message)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-%E6%97%B6%E9%97%B4%E6%88%B3%E6%88%96%E6%97%B6%E9%97%B4%E6%88%B3%E8%AF%B7%E6%B1%82timestamp-or-timestamp-reply-message"><span class="nav-text"> 9. 时间戳或时间戳请求(Timestamp or Timestamp Reply Message)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#10-%E4%BF%A1%E6%81%AF%E8%AF%B7%E6%B1%82%E6%88%96%E4%BF%A1%E6%81%AF%E5%93%8D%E5%BA%94"><span class="nav-text"> 10. 信息请求或信息响应</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#11-%E6%80%BB%E7%BB%93"><span class="nav-text"> 11. 总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#12-%E5%8F%82%E8%80%83"><span class="nav-text"> 12. 参考</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jimmy"
+      src="/images/avatar2.gif">
+  <p class="site-author-name" itemprop="name">Jimmy</p>
+  <div class="site-description" itemprop="description">不忘初心，方得始终.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">192</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">114</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/ichunhui" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;ichunhui" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:hustzch@163.com" title="E-Mail → mailto:hustzch@163.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">鄂ICP备17019300号-2 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 2015 – 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-paper-plane"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jimmy</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="站点总字数">1.1m</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">16:19</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  
+  <script color='0,0,255' opacity='0.5' zIndex='-1' count='99' src="//cdn.jsdelivr.net/gh/theme-next/theme-next-canvas-nest@1/canvas-nest.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+<script src="/js/bookmark.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<script>
+  function loadCount() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://jimmyblog-2.disqus.com/count.js';
+    s.id = 'dsq-count-scr';
+    (d.head || d.body).appendChild(s);
+  }
+  // defer loading until the whole page loading is completed
+  window.addEventListener('load', loadCount, false);
+</script>
+<script>
+  var disqus_config = function() {
+    this.page.url = "https://ichunhui.github.io/c97315f4.html";
+    this.page.identifier = "c97315f4.html";
+    this.page.title = "网络协议之 ICMP";
+    };
+  NexT.utils.loadComments(document.querySelector('#disqus_thread'), () => {
+    if (window.DISQUS) {
+      DISQUS.reset({
+        reload: true,
+        config: disqus_config
+      });
+    } else {
+      var d = document, s = d.createElement('script');
+      s.src = 'https://jimmyblog-2.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', '' + +new Date());
+      (d.head || d.body).appendChild(s);
+    }
+  });
+</script>
+
+</body>
+</html>
